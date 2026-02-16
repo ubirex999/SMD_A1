@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".screen1_bottom">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <LinearLayout
+            android:id="@+id/mousescreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            >
+            <ImageView
+                android:id="@+id/mouse"
+                android:layout_width="170dp"
+                android:layout_height="150dp"
+                android:src="@drawable/mouse"
+                android:layout_marginTop="30dp"
+                android:layout_marginLeft="30dp"
+                />
+
+            <TextView
+                android:layout_width="200sp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15sp"
+                android:paddingLeft="25sp"
+                android:text="$29.99"
+                android:textColor="#ff0000"
+                android:textStyle="bold"
+                android:textSize="18sp"
+
+                />
+            <TextView
+                android:layout_width="200sp"
+                android:layout_height="wrap_content"
+                android:paddingLeft="25sp"
+                android:text="Razor lightfeather(wired)"
+                android:textStyle="bold"
+
+                />
+            <TextView
+                android:layout_width="200sp"
+                android:layout_height="wrap_content"
+                android:paddingLeft="25sp"
+                android:text="Model : WH-1000XM4 Black."
+
+                />
+
+
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/screenkeyboard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            >
+            <ImageView
+                android:id="@+id/keyboard"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:src="@drawable/keybord"
+                android:layout_marginTop="30dp"
+                android:layout_marginLeft="30dp"
+                />
+
+            <TextView
+                android:layout_width="200sp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15sp"
+                android:paddingLeft="25sp"
+                android:text="$39.99"
+                android:textColor="#ff0000"
+                android:textStyle="bold"
+                android:textSize="18sp"
+
+                />
+            <TextView
+                android:layout_width="180sp"
+                android:layout_height="wrap_content"
+                android:paddingLeft="25sp"
+                android:text="Razor Mechanical keyboard"
+                android:textStyle="bold"
+
+                />
+            <TextView
+                android:layout_width="180sp"
+                android:layout_height="wrap_content"
+                android:paddingLeft="25sp"
+                android:text="Model : AR-8750XR7 Black."
+
+                />
+
+
+
+
+        </LinearLayout>
+
+
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">smd_assigment_1</string>
+    <string name="price_text">
+        <![CDATA[
+        <strike><font color="#888888">$100</font></strike>
+        <font color="#FF0000"><b> $70</b></font>
+        ]]>
+    </string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+</resources>

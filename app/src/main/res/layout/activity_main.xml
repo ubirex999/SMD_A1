@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:layout_marginStart="15sp"
+            android:text="Welcome"
+            android:textSize="35sp"
+            android:gravity="start"
+            android:textStyle="bold"
+        />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Deal of the day"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:textStyle="bold"
+
+            />
+        <fragment
+            android:id="@+id/dealoftheday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:layout="@layout/fragment_screen1"
+            class="com.example.smd_assigment_1.screen1"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="70sp"
+            android:layout_marginStart="15sp"
+            android:text="Recommended for you "
+            android:textSize="25sp"
+            android:gravity="start"
+            android:textStyle="bold"
+            />
+        <fragment
+            android:id="@+id/recommended"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:layout="@layout/fragment_screen1_bottom"
+            class="com.example.smd_assigment_1.screen1_bottom"
+            />
+
+
+    </LinearLayout>
+</LinearLayout>
