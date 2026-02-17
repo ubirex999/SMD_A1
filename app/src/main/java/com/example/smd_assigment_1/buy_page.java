@@ -1,15 +1,20 @@
 package com.example.smd_assigment_1;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.content.Intent;
 import android.os.Bundle;
+import android.telephony.gsm.SmsManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Button;
@@ -35,12 +40,23 @@ public class buy_page extends AppCompatActivity {
         {
             String number = "03104695189";
             String message = "Your Purchase has been successfull.";
+            SmsManager smsManager = SmsManager.getDefault();
 
-            Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse("sms" + number));
-            i.putExtra("sms_body" , message);
 
-            startActivity(i);
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.SEND_SMS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.SEND_SMS},
+                        1
+                );
+            }
+            else {
+                smsManager.sendTextMessage(number, null, message, null, null);
+            }
+            finish();
 
         });
 
