@@ -8,6 +8,11 @@
     </string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="on_board_screen_display">Welcome to FastMart</string>
+    <string name="on_board_screen_display_quote_1.0">Discover Products you love.</string>
+    <string name="on_board_screen_display_quote_1.1">delivered to your doorstep</string>
+    <string name="Login_Signup_page_quote">Create an account or log in to explore about our app</string>
+    <string name="Search">Search</string>
 
 
 </resources>

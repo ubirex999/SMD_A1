@@ -79,6 +79,7 @@ public class screen1 extends Fragment {
                 intent.putExtra("name", "Sony Premium Wireless");
                 intent.putExtra("model", "Model: WH-1000XM5");
                 intent.putExtra("detail" , "The Best Noise Canceling Wireless Headphones, HD NC Processor QN3, 12 Microphones, Adaptive NC Optimizer, Mastered by Engineers, Studio-Quality, 30-Hour Battery, Black");
+                intent.putExtra("productId", "p_2");
 
                 startActivity(intent);
             }

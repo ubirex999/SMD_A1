@@ -77,6 +77,7 @@ public class screen1_bottom extends Fragment {
                 intent.putExtra("name", "Razor lightfeather(wired)");
                 intent.putExtra("model", "Model : WH-1000XM4 Black");
                 intent.putExtra("detail", "3-Button USB Wired Mouse with Scrolling and Tracking - Standard, Black");
+                intent.putExtra("productId", "p_4");
 
                 startActivity(intent);
             }
@@ -94,6 +95,7 @@ public class screen1_bottom extends Fragment {
                 intent.putExtra("name", "Razor Mechanical keyboard");
                 intent.putExtra("model", "Model : AR-8750XR7 Black.");
                 intent.putExtra("detail", "Ergonomic 98 Keys Custom Mechanical Keyboard, VIA Programmable, USB-C Wired Gaming Keyboard, Hot Swappable, 5 Layer Paddings, Control Knob, NKRO, RGB for Win/Mac (Beige)");
+                intent.putExtra("productId", "p_3");
 
                 startActivity(intent);
             }

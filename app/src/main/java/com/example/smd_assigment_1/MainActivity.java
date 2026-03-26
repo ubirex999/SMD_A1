@@ -1,37 +1,15 @@
 package com.example.smd_assigment_1;
 
 import android.os.Bundle;
-import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import android.text.Html;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.StrikethroughSpan;
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.net.Uri;
-import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.fragment.app.FragmentManager;
 
 public class MainActivity extends AppCompatActivity {
-    FragmentManager manager;
+    private com.google.android.material.bottomnavigation.BottomNavigationView bottomNavigationView;
 
 
     @Override
@@ -45,13 +23,45 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        manager = getSupportFragmentManager();
+        bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                replaceFragment(new HomeFragment());
+                return true;
+            } else if (id == R.id.nav_search) {
+                replaceFragment(new Frag_Search());
+                return true;
+            } else if (id == R.id.nav_favourites) {
+                replaceFragment(new FavouritesFragment());
+                return true;
+            } else if (id == R.id.nav_cart) {
+                replaceFragment(new CartFragment());
+                return true;
+            } else if (id == R.id.nav_profile) {
+                replaceFragment(PlaceholderFragment.newInstance("Profile"));
+                return true;
+            }
+            return false;
+        });
+
+        if (savedInstanceState == null) {
+            replaceFragment(new HomeFragment());
+            bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        }
 
 
 
 
 
 
+    }
+
+    private void replaceFragment(androidx.fragment.app.Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
     }
 
 
