@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
                 replaceFragment(new CartFragment());
                 return true;
             } else if (id == R.id.nav_profile) {
-                replaceFragment(PlaceholderFragment.newInstance("Profile"));
+                replaceFragment(new AccountFragment());
                 return true;
             }
             return false;
