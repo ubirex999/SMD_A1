@@ -18,10 +18,18 @@ public class CartStore {
     private static final String PREFS_NAME = "cart_prefs";
     private static final String KEY_CART_JSON = "cart_json";
 
+    private static CartStore instance;
     private final SharedPreferences prefs;
 
-    public CartStore(Context context) {
-        this.prefs = context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    public static CartStore getInstance(Context context) {
+        if (instance == null) {
+            instance = new CartStore(context.getApplicationContext());
+        }
+        return instance;
+    }
+
+    private CartStore(Context context) {
+        this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     private JSONObject getCartJson() {
@@ -87,6 +95,10 @@ public class CartStore {
 
     public boolean isInCart(String productId) {
         return getCartJson().has(productId);
+    }
+
+    public void clearCart() {
+        saveCartJson(new JSONObject());
     }
 
     /**

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_seller_home"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Home" />
+        <item
+            android:id="@+id/nav_order_history"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Order History" />
+        <item
+            android:id="@+id/nav_seller_account"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Account Settings" />
+    </group>
+</menu>

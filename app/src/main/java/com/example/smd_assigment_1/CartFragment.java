@@ -65,7 +65,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
     }
 
     private void loadCart() {
-        CartStore cartStore = new CartStore(requireContext());
+        CartStore cartStore = CartStore.getInstance(requireContext());
         List<CartStore.CartItem> items = cartStore.getCartItems();
         adapter.setItems(items);
         updateTotal();
@@ -125,13 +125,37 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
         String message = sb.toString();
 
         try {
+            // Save order to Database for History
+            DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+            String orderId = "ORD-" + (int)(Math.random() * 9000 + 1000);
+            String date = java.text.DateFormat.getDateTimeInstance().format(new java.util.Date());
+            
+            java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
+            for (CartStore.CartItem item : adapter.getItems()) {
+                double price = 0;
+                try {
+                    price = Double.parseDouble(item.product.price.replaceAll("[^\\d.]", ""));
+                } catch (Exception ignored) {}
+                orderItems.add(new OrderItem(item.product.name, item.quantity, price));
+            }
+            
+            Order order = new Order(orderId, "user_123", date, total, orderItems, "Processing");
+            dbHelper.saveOrder(order);
+
             SmsManager smsManager = SmsManager.getDefault();
             // Split message if it's too long
             List<String> parts = smsManager.divideMessage(message);
             smsManager.sendMultipartTextMessage(number, null, (java.util.ArrayList<String>) parts, null, null);
-            Toast.makeText(requireContext(), "Order SMS sent!", Toast.LENGTH_SHORT).show();
+            
+            Toast.makeText(requireContext(), "Order placed and history updated!", Toast.LENGTH_SHORT).show();
+            
+            // Clear Cart
+            CartStore cartStore = CartStore.getInstance(requireContext());
+            cartStore.clearCart();
+            loadCart();
+            
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "Failed to send SMS", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Checkout failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

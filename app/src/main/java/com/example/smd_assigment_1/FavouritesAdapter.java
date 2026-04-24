@@ -25,7 +25,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.VH
     public FavouritesAdapter(Context context) {
         this.context = context;
         this.favouritesStore = new FavouritesStore(context);
-        this.cartStore = new CartStore(context);
+        this.cartStore = CartStore.getInstance(context);
     }
 
     static class VH extends RecyclerView.ViewHolder {

@@ -6,4 +6,9 @@
     </style>
 
     <style name="Theme.Smd_assigment_1" parent="Base.Theme.Smd_assigment_1" />
+
+    <style name="CircleImage" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

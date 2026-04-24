@@ -1,7 +1,7 @@
 package com.example.smd_assigment_1;
 
 import android.os.Bundle;
-import android.content.SharedPreferences;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,26 +21,22 @@ public class Login_Signup_page extends AppCompatActivity {
     private TabLayout tabLayout;
     private ViewPager2 viewPager;
 
-    private static final String PREFS_NAME = "auth_prefs";
-    private static final String LOGGED_IN_KEY = "logged_in";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // If user is already logged in, skip auth screens.
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        if (prefs.getBoolean(LOGGED_IN_KEY, false)) {
-            startActivity(new android.content.Intent(this, MainActivity.class));
-            finish();
-            return;
-        }
+        
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login_signup_page);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        
+        // Find the root view. In your XML it's likely R.id.main based on activity_login_signup_page.xml references in other files.
+        View root = findViewById(R.id.main);
+        if (root != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
 
         tabLayout = findViewById(R.id.tabLayout);
         viewPager = findViewById(R.id.ViewPager);

@@ -1,72 +1,352 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/matte_grey"
     tools:context=".Fragment_Sign_up">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        >
-        <com.google.android.material.textfield.TextInputLayout
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Complete Your Profile"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:text="STEP 1 OF 1"
+            android:textColor="#8E949A"
+            android:textSize="10sp"
+            android:letterSpacing="0.1" />
+
+        <View
+            android:layout_width="100dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:background="@color/yellow" />
+
+        <!-- Full Name -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="FULL NAME"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etName_signup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="Julianne Moore"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Email -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="EMAIL"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etEmail_signup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="example@mail.com"
+            android:inputType="textEmailAddress"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Password -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="PASSWORD"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etPassword_signup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="********"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Confirm Password -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="CONFIRM PASSWORD"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etPassword_verify"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="********"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Account Type -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="ACCOUNT TYPE"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgAccountType_signup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            >
-            <com.google.android.material.textfield.TextInputEditText
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/etEmail_signup"
-                android:textColor="#FFFFFF"
-                android:hint="Email"
-                android:inputType="textEmailAddress"/>
-            />
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
 
-        </com.google.android.material.textfield.TextInputLayout>
+            <RadioButton
+                android:id="@+id/rbBuyer"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"
+                android:gravity="center"
+                android:text="Buyer"
+                android:textColor="@color/radio_text_color" />
 
+            <View
+                android:layout_width="12dp"
+                android:layout_height="0dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
+            <RadioButton
+                android:id="@+id/rbSeller"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"
+                android:gravity="center"
+                android:text="Seller"
+                android:textColor="@color/radio_text_color" />
+        </RadioGroup>
+
+        <!-- Phone Number -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="PHONE NUMBER"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
-            app:endIconMode="password_toggle"
-            >
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword_signup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:inputType="textPassword"/>
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
 
-        <com.google.android.material.textfield.TextInputLayout
+            <EditText
+                android:layout_width="60dp"
+                android:layout_height="56dp"
+                android:background="@drawable/edit_text_bg"
+                android:gravity="center"
+                android:hint="+1"
+                android:textColor="@color/black"
+                android:textColorHint="#757575" />
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="0dp" />
+
+            <EditText
+                android:id="@+id/etPhone_signup"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:background="@drawable/edit_text_bg"
+                android:hint="202-555-0143"
+                android:inputType="phone"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/black"
+                android:textColorHint="#757575" />
+        </LinearLayout>
+
+        <!-- Gender -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="GENDER"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgGender_signup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Confirm_Password"
-            app:endIconMode="password_toggle"
-            >
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword_verify"
-                android:layout_width="match_parent"
-                android:textColor="#FFFFFF"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"/>
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbMale"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"
+                android:gravity="center"
+                android:text="Male"
+                android:textColor="@color/radio_text_color" />
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="0dp" />
+
+            <RadioButton
+                android:id="@+id/rbFemale"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"
+                android:gravity="center"
+                android:text="Female"
+                android:textColor="@color/radio_text_color" />
+        </RadioGroup>
+
+        <!-- Date of Birth -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="DATE OF BIRTH"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etDob_signup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="DD/MM/YYYY"
+            android:inputType="date"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Country -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="COUNTRY"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCountry_signup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:hint="United States"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <!-- Residential Address -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="RESIDENTIAL ADDRESS"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etAddress_signup"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:gravity="top"
+            android:hint="742 Evergreen Terrace, Springfield"
+            android:padding="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575" />
+
+        <CheckBox
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="I agree to the Terms of Service and Privacy Policy. We use your data to personalize your curated experience."
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/pb_signup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
-            android:layout_width="match_parent"
             android:id="@+id/bt_signup"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
-            android:layout_gravity="center"
-            android:layout_marginHorizontal="15dp"
-            android:text="Sign up "
-            android:backgroundTint="@color/black"
-            />
-
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="32dp"
+            android:backgroundTint="@color/yellow"
+            android:text="Save Profile"
+            android:textColor="@color/black"
+            app:cornerRadius="8dp" />
 
     </LinearLayout>
 
-</FrameLayout>
+</ScrollView>

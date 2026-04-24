@@ -4,4 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="purple">#9C27B0</color>
     <color name="magenta">#FF00FF</color>
+    <color name="matte_grey">#353535</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="blue_selection">#2196F3</color>
 </resources>

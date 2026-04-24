@@ -8,22 +8,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class detail_buy extends AppCompatActivity {
 
     Button buy;
     ImageView image;
     TextView name, price, detail, model;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail_buy);
+
+        dbHelper = new DatabaseHelper(this);
 
         image = findViewById(R.id.detailImage);
         price = findViewById(R.id.detailPrice);
@@ -31,6 +33,12 @@ public class detail_buy extends AppCompatActivity {
         model = findViewById(R.id.detailModel);
         detail = findViewById(R.id.detaildetail);
         buy = findViewById(R.id.buy);
+
+        SharedPreferences prefs = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
+        String accountType = prefs.getString("account_type", "Buyer");
+        if ("Seller".equalsIgnoreCase(accountType)) {
+            buy.setVisibility(View.GONE);
+        }
 
         Intent intent = getIntent();
 
@@ -48,22 +56,21 @@ public class detail_buy extends AppCompatActivity {
         detail.setText(productDetail);
 
         buy.setOnClickListener(v -> {
-            // Show AlertDialog confirmation (no SMS)
             new AlertDialog.Builder(detail_buy.this)
-                    .setTitle("Buy Now")
-                    .setMessage("Are you sure you want to buy this product?")
-                    .setPositiveButton("Confirm", (dialog, which) -> {
-                        // Add product to cart with quantity = 1
-                        Product product = new Product(
-                                productId != null ? productId : "unknown",
-                                productName != null ? productName : "",
-                                productPrice != null ? productPrice : "$0.00",
-                                null,
-                                productDetail != null ? productDetail : "",
-                                productModel != null ? productModel : "",
-                                img
-                        );
-                        CartStore cartStore = new CartStore(detail_buy.this);
+                    .setTitle("Add to Cart")
+                    .setMessage("Do you want to add this product to your cart?")
+                    .setPositiveButton("Add", (dialog, which) -> {
+                        Product product = new Product();
+                        product.setId(productId != null ? productId : "unknown");
+                        product.setName(productName != null ? productName : "");
+                        product.setType("Category");
+                        product.setPrice(productPrice != null ? productPrice : "$0.00");
+                        product.setDescription(productDetail != null ? productDetail : "");
+                        product.setSellerId("SellerID");
+                        product.setImageResId(img);
+                        product.setModelOrInfo(productModel != null ? productModel : "");
+                        
+                        CartStore cartStore = CartStore.getInstance(detail_buy.this);
                         cartStore.addToCart(product);
                         Toast.makeText(detail_buy.this, "Added to cart!", Toast.LENGTH_SHORT).show();
                         finish();

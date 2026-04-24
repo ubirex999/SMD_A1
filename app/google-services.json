@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "245541129939",
+    "project_id": "smd-assigment-1",
+    "storage_bucket": "smd-assigment-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:245541129939:android:0cfad2495ff09ce2774e26",
+        "android_client_info": {
+          "package_name": "com.example.smd_assigment_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAU8XXIaE-HAKuYyVHiiZ6Wo4zZR0evIaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

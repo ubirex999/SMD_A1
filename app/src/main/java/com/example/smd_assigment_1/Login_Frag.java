@@ -3,74 +3,54 @@ package com.example.smd_assigment_1;
 import android.os.Bundle;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link Login_Frag#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class Login_Frag extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private static final String TAG = "Login_Frag";
+    private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+    private ProgressBar progressBar;
+    private MaterialButton loginBtn;
 
     private static final String PREFS_NAME = "auth_prefs";
-    private static final String USERS_KEY = "users_json";
-    private static final String PASSWORD_SALT = "smd_assigment_1_salt";
     private static final String LOGGED_IN_KEY = "logged_in";
-    private static final String LOGGED_IN_EMAIL_KEY = "logged_in_email";
+    private static final String USER_ID_KEY = "user_id";
+    private static final String USER_NAME_KEY = "user_name";
+    private static final String ACCOUNT_TYPE_KEY = "account_type";
 
     public Login_Frag() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment Login_Frag.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static Login_Frag newInstance(String param1, String param2) {
-        Login_Frag fragment = new Login_Frag();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+        mAuth = FirebaseAuth.getInstance();
+        try {
+            // Explicitly set the database URL to match your Firebase project setup
+            mDatabase = FirebaseDatabase.getInstance("https://smd-assigment-1-default-rtdb.firebaseio.com").getReference();
+            Log.d(TAG, "Database Reference initialized with explicit URL.");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize Firebase Database", e);
         }
     }
 
@@ -81,127 +61,160 @@ public class Login_Frag extends Fragment {
 
         TextInputEditText emailEt = root.findViewById(R.id.etEmail_login);
         TextInputEditText passwordEt = root.findViewById(R.id.etPassword);
-        MaterialButton loginBtn = root.findViewById(R.id.bt_login);
-
-        SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE);
+        loginBtn = root.findViewById(R.id.bt_login);
+        progressBar = root.findViewById(R.id.pb_login);
 
         loginBtn.setOnClickListener(v -> {
-            String email = emailEt.getText() != null ? emailEt.getText().toString().trim() : "";
-            String password = passwordEt.getText() != null ? passwordEt.getText().toString().trim() : "";
+            String email = emailEt.getText().toString().trim();
+            String password = passwordEt.getText().toString().trim();
 
-            emailEt.setError(null);
-            passwordEt.setError(null);
-
-            if (email.isEmpty()) {
-                emailEt.setError("Email is required");
-                Toast.makeText(requireContext(), "Please enter your email", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (!isValidEmail(email)) {
-                emailEt.setError("Invalid email format");
-                Toast.makeText(requireContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (password.isEmpty()) {
-                passwordEt.setError("Password is required");
-                Toast.makeText(requireContext(), "Please enter your password", Toast.LENGTH_SHORT).show();
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(getContext(), "Please enter email and password", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Basic password requirement check (same rules as sign-up).
-            if (!isValidPassword(password)) {
-                passwordEt.setError("Password must be 6+ chars and include letters and numbers");
-                Toast.makeText(requireContext(), "Password does not meet requirements", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            setLoading(true);
+            Log.d(TAG, "Attempting login for: " + email);
 
-            boolean ok = loginWithPrefs(prefs, email, password);
-            if (!ok) {
-                Toast.makeText(requireContext(), "Invalid email or password", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(task -> {
+                        if (getActivity() == null) return;
+                        
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            if (user != null) {
+                                final boolean[] hasRedirected = {false};
+                                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                                Runnable timeoutRunnable = () -> {
+                                    if (!hasRedirected[0] && isAdded() && getContext() != null) {
+                                        setLoading(false);
+                                        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                                            .setTitle("Connectivity Issue")
+                                            .setMessage("Database sync is taking too long. Please select your role to proceed:")
+                                            .setPositiveButton("Seller", (dialog, which) -> {
+                                                hasRedirected[0] = true;
+                                                saveToSharedPrefs(user.getUid(), "User", "Seller");
+                                                navigateToMain();
+                                            })
+                                            .setNegativeButton("Buyer", (dialog, which) -> {
+                                                hasRedirected[0] = true;
+                                                saveToSharedPrefs(user.getUid(), "User", "Buyer");
+                                                navigateToMain();
+                                            })
+                                            .setCancelable(false)
+                                            .show();
+                                    }
+                                };
+                                handler.postDelayed(timeoutRunnable, 4000);
 
-            setLoggedIn(prefs, email);
-            Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(requireContext(), MainActivity.class));
-            requireActivity().finish();
+                                mDatabase.child("users").child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        if (hasRedirected[0] || !isAdded()) return;
+                                        
+                                        String name = snapshot.child("name").getValue(String.class);
+                                        String accountType = snapshot.child("accountType").getValue(String.class);
+                                        
+                                        if (accountType != null) {
+                                            hasRedirected[0] = true;
+                                            handler.removeCallbacks(timeoutRunnable);
+                                            setLoading(false);
+                                            saveToSharedPrefs(user.getUid(), name, accountType);
+                                            navigateToMain();
+                                        } else {
+                                            // Fallback: Check the role_registry by email
+                                            String email = user.getEmail();
+                                            if (email != null) {
+                                                String encodedEmail = email.replace(".", ",");
+                                                mDatabase.child("role_registry").child(encodedEmail).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(@NonNull DataSnapshot roleSnapshot) {
+                                                        if (hasRedirected[0] || !isAdded()) return;
+                                                        hasRedirected[0] = true;
+                                                        handler.removeCallbacks(timeoutRunnable);
+                                                        setLoading(false);
+                                                        
+                                                        String type = roleSnapshot.getValue(String.class);
+                                                        saveToSharedPrefs(user.getUid(), name, type != null ? type : "Buyer");
+                                                        navigateToMain();
+                                                    }
+                                                    @Override
+                                                    public void onCancelled(@NonNull DatabaseError error) {
+                                                        // If both fail, let the timeout handle it
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        if (hasRedirected[0] || !isAdded()) return;
+                                        Log.e(TAG, "DB Load error: " + error.getMessage());
+                                    }
+                                });
+                            } else {
+                                setLoading(false);
+                            }
+                        } else {
+                            setLoading(false);
+                            setLoading(false);
+                            String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                            Log.e(TAG, "Login failed: " + error);
+                            Toast.makeText(getContext(), "Login failed: " + error, Toast.LENGTH_LONG).show();
+                        }
+                    });
         });
 
         return root;
     }
 
-    private boolean isValidEmail(String email) {
-        if (email == null) return false;
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private void setLoading(boolean isLoading) {
+        if (loginBtn != null) loginBtn.setEnabled(!isLoading);
+        if (progressBar != null) {
+            progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        }
     }
 
+    private void fetchUserInfoAndSync(String userId) {
+        // This runs in the background. Even if it hangs, the user is already in MainActivity.
+        if (mDatabase == null) return;
+        
+        mDatabase.child("users").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String name = snapshot.child("name").getValue(String.class);
+                    String accountType = snapshot.child("accountType").getValue(String.class);
+                    Log.d(TAG, "Background sync: User data found: " + name);
+                    saveToSharedPrefs(userId, name, accountType);
+                }
+            }
 
-    private boolean isValidPassword(String password) {
-        if (password == null) return false;
-        String p = password.trim();
-        if (p.isEmpty()) return false;
-        if (p.length() < 6) return false;
-        boolean hasLetter = p.matches(".*[A-Za-z].*");
-        boolean hasDigit = p.matches(".*[0-9].*");
-        if (!hasLetter || !hasDigit) return false;
-        return !p.contains(" ");
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Background sync cancelled: " + error.getMessage());
+            }
+        });
     }
 
-    private boolean loginWithPrefs(SharedPreferences prefs, String email, String password) {
-        email = normalizeEmail(email);
-        if (email == null || email.isEmpty() || password == null || password.isEmpty()) return false;
-
-        JSONObject users = getUsersJson(prefs);
-        if (!users.has(email)) return false;
-
-        String storedHash = users.optString(email, null);
-        if (storedHash == null || storedHash.isEmpty()) return false;
-
-        return storedHash.equals(hashPassword(password));
+    private void navigateToMain() {
+        if (getActivity() != null) {
+            Intent intent = new Intent(getContext(), MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            getActivity().finish();
+        }
     }
 
-    private void setLoggedIn(SharedPreferences prefs, String email) {
-        email = normalizeEmail(email);
+    private void saveToSharedPrefs(String userId, String name, String accountType) {
+        if (getContext() == null) return;
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE);
         prefs.edit()
+                .putString(USER_ID_KEY, userId)
+                .putString(USER_NAME_KEY, name != null ? name : "User")
+                .putString(ACCOUNT_TYPE_KEY, accountType != null ? accountType : "Buyer")
                 .putBoolean(LOGGED_IN_KEY, true)
-                .putString(LOGGED_IN_EMAIL_KEY, email)
                 .apply();
     }
-
-    private JSONObject getUsersJson(SharedPreferences prefs) {
-        String json = prefs.getString(USERS_KEY, null);
-        if (json == null || json.trim().isEmpty()) return new JSONObject();
-
-        try {
-            return new JSONObject(json);
-        } catch (JSONException e) {
-            // Corrupted data; treat as no users.
-            return new JSONObject();
-        }
-    }
-
-    private String normalizeEmail(String email) {
-        if (email == null) return null;
-        return email.trim().toLowerCase();
-    }
-
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashed = digest.digest((PASSWORD_SALT + password).getBytes(StandardCharsets.UTF_8));
-            return toHex(hashed);
-        } catch (NoSuchAlgorithmException e) {
-            return "";
-        }
-    }
-
-    private String toHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) {
-            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
-            sb.append(Character.forDigit(b & 0xF, 16));
-        }
-        return sb.toString();
-    }
-
 }
