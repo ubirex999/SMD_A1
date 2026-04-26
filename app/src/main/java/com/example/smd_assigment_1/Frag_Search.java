@@ -19,6 +19,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,10 +35,19 @@ public class Frag_Search extends Fragment {
     // SharedPreferences key used for storing search history
     private static final String SearchHashKey = "search_history_prefs";
     private static final String KEY_QUERIES = "saved_queries";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     private RecyclerView recyclerHistory;
     private HistoryAdapter historyAdapter;
     private List<String> historyList = new ArrayList<>();
+
+    private RecyclerView recyclerResults;
+    private TextView tvNoResults;
+    private RecommendedAdapter resultsAdapter;
+    private final List<Product> resultProducts = new ArrayList<>();
+    private final List<Product> allProducts = new ArrayList<>();
+    private DatabaseReference productsRef;
+    private ValueEventListener productsListener;
 
     public Frag_Search() {
         // Required empty public constructor
@@ -49,11 +63,21 @@ public class Frag_Search extends Fragment {
         ImageView btnBack = root.findViewById(R.id.bt_back_from_Search);
         TextView btnClearAll = root.findViewById(R.id.bt_clearall);
         recyclerHistory = root.findViewById(R.id.recyclerHistory);
+        recyclerResults = root.findViewById(R.id.recyclerResults);
+        tvNoResults = root.findViewById(R.id.tvNoResults);
 
         // Setup history RecyclerView
         recyclerHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
         historyAdapter = new HistoryAdapter();
         recyclerHistory.setAdapter(historyAdapter);
+
+        // Setup results RecyclerView (clickable product cards)
+        recyclerResults.setLayoutManager(new LinearLayoutManager(requireContext()));
+        resultsAdapter = new RecommendedAdapter(requireContext(), resultProducts);
+        recyclerResults.setAdapter(resultsAdapter);
+
+        productsRef = FirebaseDatabase.getInstance(DB_URL).getReference("products");
+        startProductsListener();
 
         // Load saved history
         loadHistory();
@@ -94,29 +118,53 @@ public class Frag_Search extends Fragment {
         // Save query to history
         saveQueryToHistory(query);
 
-        // Linear search through the hard-coded product list
-        List<Product> products = ProductCatalog.getRecommended();
-        boolean found = false;
+        String q = query.trim().toLowerCase();
+        resultProducts.clear();
 
-        for (int i = 0; i < products.size(); i++) {
-            Product p = products.get(i);
-            if (p.name.toLowerCase().contains(query.toLowerCase())) {
-                found = true;
-                break;
+        for (int i = 0; i < allProducts.size(); i++) {
+            Product p = allProducts.get(i);
+            String name = p.name != null ? p.name.toLowerCase() : "";
+            String type = p.type != null ? p.type.toLowerCase() : "";
+            String desc = p.description != null ? p.description.toLowerCase() : "";
+            if (name.contains(q) || type.contains(q) || desc.contains(q)) {
+                resultProducts.add(p);
             }
         }
 
-        // Show AlertDialog with result
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        if (found) {
-            builder.setTitle("Search Result");
-            builder.setMessage("Product Found.");
-        } else {
-            builder.setTitle("Search Result");
-            builder.setMessage("Product not found.");
+        resultsAdapter.notifyDataSetChanged();
+
+        boolean hasResults = !resultProducts.isEmpty();
+        recyclerResults.setVisibility(hasResults ? View.VISIBLE : View.GONE);
+        tvNoResults.setVisibility(hasResults ? View.GONE : View.VISIBLE);
+    }
+
+    private void startProductsListener() {
+        if (productsRef == null) return;
+        if (productsListener != null) {
+            productsRef.removeEventListener(productsListener);
         }
-        builder.setPositiveButton("OK", null);
-        builder.show();
+
+        productsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                allProducts.clear();
+                for (DataSnapshot data : snapshot.getChildren()) {
+                    Product product = data.getValue(Product.class);
+                    if (product != null) {
+                        allProducts.add(product);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded()) return;
+                tvNoResults.setText("No results found");
+                tvNoResults.setVisibility(View.VISIBLE);
+                recyclerResults.setVisibility(View.GONE);
+            }
+        };
+        productsRef.addValueEventListener(productsListener);
     }
 
     /**
@@ -156,6 +204,15 @@ public class Frag_Search extends Fragment {
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (productsRef != null && productsListener != null) {
+            productsRef.removeEventListener(productsListener);
+            productsListener = null;
         }
     }
 

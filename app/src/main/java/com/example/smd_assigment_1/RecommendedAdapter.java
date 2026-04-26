@@ -2,7 +2,6 @@ package com.example.smd_assigment_1;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,21 +47,6 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
         }
     }
 
-    private boolean isProductInFavourites(String productId) {
-        Cursor cursor = dbHelper.getFavourites();
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                String id = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_ID));
-                if (id.equals(productId)) {
-                    cursor.close();
-                    return true;
-                }
-            }
-            cursor.close();
-        }
-        return false;
-    }
-
     private void setHeartUi(TextView heartButton, boolean isFavourite) {
         if (isFavourite) {
             heartButton.setText("♥");
@@ -84,15 +68,16 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
     public void onBindViewHolder(@NonNull VH holder, int position) {
         Product p = products.get(position);
         
-        // Handle images - use resource ID if available, otherwise default
-        if (p.imageResId != 0) {
-            holder.productImage.setImageResource(p.imageResId);
-        } else {
-            holder.productImage.setImageResource(R.drawable.headphones);
-        }
+        int imageResId = p.getResolvedImageResId();
+        holder.productImage.setImageResource(imageResId);
 
         holder.productName.setText(p.name);
-        holder.productPrice.setText(p.price);
+        String priceText = p.price != null ? p.price.trim() : "";
+        if (!priceText.isEmpty() && !priceText.startsWith("$")) {
+            priceText = "$" + priceText;
+        }
+        final String displayPrice = priceText;
+        holder.productPrice.setText(displayPrice);
         
         String info = p.modelOrInfo != null ? p.modelOrInfo : (p.type != null ? p.type : "");
         holder.productModel.setText(info);
@@ -111,12 +96,14 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, detail_buy.class);
-            intent.putExtra("image", p.imageResId != 0 ? p.imageResId : R.drawable.headphones);
-            intent.putExtra("price", p.price);
+            intent.putExtra("image", imageResId);
+            intent.putExtra("price", displayPrice);
             intent.putExtra("name", p.name);
             intent.putExtra("model", info);
             intent.putExtra("detail", p.description != null ? p.description : "");
             intent.putExtra("productId", p.id);
+            intent.putExtra("sellerId", p.sellerId != null ? p.sellerId : "");
+            intent.putExtra("type", p.type != null ? p.type : "");
             context.startActivity(intent);
         });
 
@@ -124,6 +111,21 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
             CartStore.getInstance(context).addToCart(p);
             Toast.makeText(context, p.name + " added to cart", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private boolean isProductInFavourites(String productId) {
+        android.database.Cursor cursor = dbHelper.getFavourites();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_ID));
+                if (id.equals(productId)) {
+                    cursor.close();
+                    return true;
+                }
+            }
+            cursor.close();
+        }
+        return false;
     }
 
     @Override

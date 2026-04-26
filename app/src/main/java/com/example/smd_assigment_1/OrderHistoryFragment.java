@@ -13,6 +13,13 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +28,9 @@ public class OrderHistoryFragment extends Fragment {
     private RecyclerView rvOrders;
     private OrderAdapter adapter;
     private List<Order> orderList;
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
+    private DatabaseReference ordersRef;
+    private ValueEventListener ordersListener;
 
     @Nullable
     @Override
@@ -61,36 +71,49 @@ public class OrderHistoryFragment extends Fragment {
 
     private void loadOrderHistory() {
         if (getContext() == null) return;
-        
-        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-        Cursor cursor = dbHelper.getAllOrders();
-        
-        orderList.clear();
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                String id = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ORDER_ID));
-                String userId = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ORDER_USER_ID));
-                String date = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ORDER_DATE));
-                double total = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ORDER_TOTAL));
-                String status = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ORDER_STATUS));
-                
-                // Load items for this order
-                List<OrderItem> items = new ArrayList<>();
-                Cursor itemCursor = dbHelper.getOrderItems(id);
-                if (itemCursor != null && itemCursor.moveToFirst()) {
-                    do {
-                        String pName = itemCursor.getString(itemCursor.getColumnIndexOrThrow(DatabaseHelper.COL_OI_PROD_NAME));
-                        int qty = itemCursor.getInt(itemCursor.getColumnIndexOrThrow(DatabaseHelper.COL_OI_QTY));
-                        double price = itemCursor.getDouble(itemCursor.getColumnIndexOrThrow(DatabaseHelper.COL_OI_PRICE));
-                        items.add(new OrderItem(pName, qty, price));
-                    } while (itemCursor.moveToNext());
-                    itemCursor.close();
-                }
-                
-                orderList.add(new Order(id, userId, date, total, items, status));
-            } while (cursor.moveToNext());
-            cursor.close();
+
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE);
+        String type = prefs.getString("account_type", "Buyer");
+
+        String node = "Seller".equalsIgnoreCase(type) ? ("seller_orders/" + uid) : ("user_orders/" + uid);
+        ordersRef = FirebaseDatabase.getInstance(DB_URL).getReference(node);
+
+        if (ordersListener != null) {
+            ordersRef.removeEventListener(ordersListener);
         }
-        adapter.notifyDataSetChanged();
+
+        ordersListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!isAdded()) return;
+                orderList.clear();
+                for (DataSnapshot data : snapshot.getChildren()) {
+                    Order order = data.getValue(Order.class);
+                    if (order != null) {
+                        orderList.add(order);
+                    }
+                }
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded()) return;
+                Toast.makeText(getContext(), "Failed to load orders: " + error.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        };
+        ordersRef.addValueEventListener(ordersListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (ordersRef != null && ordersListener != null) {
+            ordersRef.removeEventListener(ordersListener);
+            ordersListener = null;
+        }
     }
 }

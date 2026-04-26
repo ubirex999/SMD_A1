@@ -55,12 +55,16 @@ public class FavouritesStore {
             if (favourites.has(product.id)) {
                 favourites.remove(product.id);
             } else {
+                int imageResId = product.imageResId != 0 ? product.imageResId : product.getResolvedImageResId();
                 JSONObject entry = new JSONObject();
                 entry.put("name", product.name);
                 entry.put("price", product.price);
                 if (product.originalPrice != null) entry.put("originalPrice", product.originalPrice);
                 entry.put("description", product.description);
                 entry.put("modelOrInfo", product.modelOrInfo);
+                entry.put("type", product.type);
+                entry.put("sellerId", product.sellerId);
+                entry.put("imageResId", imageResId);
                 favourites.put(product.id, entry);
             }
             saveFavouritesJson(favourites);
@@ -78,15 +82,24 @@ public class FavouritesStore {
             if (entry == null) continue;
 
             Product catalogProduct = ProductCatalog.findById(id);
-            int imageRes = catalogProduct != null ? catalogProduct.imageResId : 0;
+            int imageRes = entry.has("imageResId") ? entry.optInt("imageResId", 0) : 0;
+            if (imageRes == 0 && catalogProduct != null) imageRes = catalogProduct.imageResId;
 
             String name = entry.optString("name", id);
             String price = entry.optString("price", "");
             String originalPrice = entry.has("originalPrice") ? entry.optString("originalPrice", null) : null;
             String description = entry.optString("description", "");
             String modelOrInfo = entry.optString("modelOrInfo", "");
+            String type = entry.optString("type", "");
+            String sellerId = entry.optString("sellerId", "");
 
-            result.add(new Product(id, name, price, originalPrice, description, modelOrInfo, imageRes));
+            Product p = new Product(id, name, price, originalPrice, description, modelOrInfo, imageRes);
+            p.setType(type);
+            p.setSellerId(sellerId);
+            if (p.imageResId == 0) {
+                p.setImageResId(p.getResolvedImageResId());
+            }
+            result.add(p);
         }
         return result;
     }

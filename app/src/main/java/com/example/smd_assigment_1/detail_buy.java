@@ -48,6 +48,8 @@ public class detail_buy extends AppCompatActivity {
         String productModel = intent.getStringExtra("model");
         String productDetail = intent.getStringExtra("detail");
         String productId = intent.getStringExtra("productId");
+        String sellerId = intent.getStringExtra("sellerId");
+        String productType = intent.getStringExtra("type");
 
         image.setImageResource(img);
         name.setText(productName);
@@ -63,10 +65,10 @@ public class detail_buy extends AppCompatActivity {
                         Product product = new Product();
                         product.setId(productId != null ? productId : "unknown");
                         product.setName(productName != null ? productName : "");
-                        product.setType("Category");
+                        product.setType(productType != null ? productType : "");
                         product.setPrice(productPrice != null ? productPrice : "$0.00");
                         product.setDescription(productDetail != null ? productDetail : "");
-                        product.setSellerId("SellerID");
+                        product.setSellerId(sellerId != null ? sellerId : "");
                         product.setImageResId(img);
                         product.setModelOrInfo(productModel != null ? productModel : "");
                         

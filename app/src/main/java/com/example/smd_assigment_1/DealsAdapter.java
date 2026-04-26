@@ -18,12 +18,12 @@ public class DealsAdapter extends RecyclerView.Adapter<DealsAdapter.VH> {
 
     private final Context context;
     private final List<Product> deals;
-    private final FavouritesStore favouritesStore;
+    private final DatabaseHelper dbHelper;
 
     public DealsAdapter(Context context, List<Product> deals) {
         this.context = context;
         this.deals = deals;
-        this.favouritesStore = new FavouritesStore(context);
+        this.dbHelper = new DatabaseHelper(context);
     }
 
     static class VH extends RecyclerView.ViewHolder {
@@ -80,12 +80,16 @@ public class DealsAdapter extends RecyclerView.Adapter<DealsAdapter.VH> {
         holder.productHidden.setText(p.id);
         holder.productHidden.setVisibility(View.GONE);
 
-        boolean fav = favouritesStore.isFavourite(p.id);
+        boolean fav = isProductInFavourites(p.id);
         setHeartUi(holder.heartButton, fav);
 
         holder.heartButton.setOnClickListener(v -> {
-            favouritesStore.toggleFavourite(p);
-            boolean nowFav = favouritesStore.isFavourite(p.id);
+            if (isProductInFavourites(p.id)) {
+                dbHelper.removeFavourite(p.id);
+            } else {
+                dbHelper.addFavourite(p);
+            }
+            boolean nowFav = isProductInFavourites(p.id);
             setHeartUi(holder.heartButton, nowFav);
             notifyItemChanged(holder.getAdapterPosition());
         });
@@ -100,6 +104,21 @@ public class DealsAdapter extends RecyclerView.Adapter<DealsAdapter.VH> {
             intent.putExtra("productId", p.id);
             context.startActivity(intent);
         });
+    }
+
+    private boolean isProductInFavourites(String productId) {
+        android.database.Cursor cursor = dbHelper.getFavourites();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_ID));
+                if (id.equals(productId)) {
+                    cursor.close();
+                    return true;
+                }
+            }
+            cursor.close();
+        }
+        return false;
     }
 
     @Override

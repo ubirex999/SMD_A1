@@ -34,11 +34,13 @@ public class HomeFragment extends Fragment {
     private static final String PREFS_NAME = "auth_prefs";
     private static final String LOGGED_IN_KEY = "logged_in";
     private static final String USER_NAME_KEY = "user_name";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     private RecyclerView recommendedRv;
     private RecommendedAdapter adapter;
     private List<Product> productList;
     private DatabaseReference mDatabase;
+    private ValueEventListener productsListener;
     private FloatingActionButton fabChat;
 
     @Nullable
@@ -71,13 +73,11 @@ public class HomeFragment extends Fragment {
         recommendedRv.setLayoutManager(new LinearLayoutManager(requireContext()));
         
         productList = new ArrayList<>();
-        // Pre-populate with hardcoded products so they show immediately
-        productList.addAll(ProductCatalog.getRecommended());
         
         adapter = new RecommendedAdapter(requireContext(), productList);
         recommendedRv.setAdapter(adapter);
 
-        mDatabase = FirebaseDatabase.getInstance().getReference("products");
+        mDatabase = FirebaseDatabase.getInstance(DB_URL).getReference("products");
         loadDynamicProducts();
 
         return root;
@@ -85,14 +85,14 @@ public class HomeFragment extends Fragment {
 
     private void loadDynamicProducts() {
         // Use ValueEventListener for real-time data synchronization
-        mDatabase.addValueEventListener(new ValueEventListener() {
+        if (productsListener != null) {
+            mDatabase.removeEventListener(productsListener);
+        }
+        productsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 productList.clear();
-                // Add hard-coded recommended products first
-                productList.addAll(ProductCatalog.getRecommended());
-                
-                // Then add dynamic products from Firebase
+                // Show products from Firebase in realtime
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Product product = data.getValue(Product.class);
                     if (product != null) {
@@ -108,7 +108,17 @@ public class HomeFragment extends Fragment {
                     Toast.makeText(getContext(), "Real-time sync failed", Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        };
+        mDatabase.addValueEventListener(productsListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mDatabase != null && productsListener != null) {
+            mDatabase.removeEventListener(productsListener);
+            productsListener = null;
+        }
     }
 
     private void logout() {

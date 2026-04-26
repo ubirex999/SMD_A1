@@ -28,9 +28,8 @@ public class FavouritesFragment extends Fragment {
         FavouritesAdapter adapter = new FavouritesAdapter(requireContext());
         recycler.setAdapter(adapter);
 
-        // Load data immediately.
-        List<Product> favs = new FavouritesStore(requireContext()).getFavouriteProducts();
-        adapter.setProducts(favs);
+        // Load from SQLite favourites immediately.
+        adapter.reloadFromDb();
 
         return root;
     }
@@ -44,7 +43,7 @@ public class FavouritesFragment extends Fragment {
         RecyclerView recycler = root.findViewById(R.id.recyclerFavourites);
         if (recycler.getAdapter() instanceof FavouritesAdapter) {
             FavouritesAdapter adapter = (FavouritesAdapter) recycler.getAdapter();
-            adapter.setProducts(new FavouritesStore(requireContext()).getFavouriteProducts());
+            adapter.reloadFromDb();
         }
     }
 }

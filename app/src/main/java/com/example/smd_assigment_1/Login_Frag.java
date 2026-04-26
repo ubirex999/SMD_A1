@@ -26,6 +26,7 @@ import com.google.firebase.database.ValueEventListener;
 public class Login_Frag extends Fragment {
 
     private static final String TAG = "Login_Frag";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
     private ProgressBar progressBar;
@@ -46,8 +47,7 @@ public class Login_Frag extends Fragment {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
         try {
-            // Explicitly set the database URL to match your Firebase project setup
-            mDatabase = FirebaseDatabase.getInstance("https://smd-assigment-1-default-rtdb.firebaseio.com").getReference();
+            mDatabase = FirebaseDatabase.getInstance(DB_URL).getReference();
             Log.d(TAG, "Database Reference initialized with explicit URL.");
         } catch (Exception e) {
             Log.e(TAG, "Failed to initialize Firebase Database", e);
@@ -83,74 +83,58 @@ public class Login_Frag extends Fragment {
                         if (task.isSuccessful()) {
                             FirebaseUser user = mAuth.getCurrentUser();
                             if (user != null) {
-                                final boolean[] hasRedirected = {false};
-                                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
-                                Runnable timeoutRunnable = () -> {
-                                    if (!hasRedirected[0] && isAdded() && getContext() != null) {
-                                        setLoading(false);
-                                        new androidx.appcompat.app.AlertDialog.Builder(getContext())
-                                            .setTitle("Connectivity Issue")
-                                            .setMessage("Database sync is taking too long. Please select your role to proceed:")
-                                            .setPositiveButton("Seller", (dialog, which) -> {
-                                                hasRedirected[0] = true;
-                                                saveToSharedPrefs(user.getUid(), "User", "Seller");
-                                                navigateToMain();
-                                            })
-                                            .setNegativeButton("Buyer", (dialog, which) -> {
-                                                hasRedirected[0] = true;
-                                                saveToSharedPrefs(user.getUid(), "User", "Buyer");
-                                                navigateToMain();
-                                            })
-                                            .setCancelable(false)
-                                            .show();
-                                    }
-                                };
-                                handler.postDelayed(timeoutRunnable, 4000);
-
                                 mDatabase.child("users").child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        if (hasRedirected[0] || !isAdded()) return;
+                                        if (!isAdded()) return;
                                         
                                         String name = snapshot.child("name").getValue(String.class);
                                         String accountType = snapshot.child("accountType").getValue(String.class);
                                         
-                                        if (accountType != null) {
-                                            hasRedirected[0] = true;
-                                            handler.removeCallbacks(timeoutRunnable);
+                                        if (accountType != null && !accountType.trim().isEmpty()) {
                                             setLoading(false);
                                             saveToSharedPrefs(user.getUid(), name, accountType);
                                             navigateToMain();
-                                        } else {
-                                            // Fallback: Check the role_registry by email
-                                            String email = user.getEmail();
-                                            if (email != null) {
-                                                String encodedEmail = email.replace(".", ",");
-                                                mDatabase.child("role_registry").child(encodedEmail).addListenerForSingleValueEvent(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(@NonNull DataSnapshot roleSnapshot) {
-                                                        if (hasRedirected[0] || !isAdded()) return;
-                                                        hasRedirected[0] = true;
-                                                        handler.removeCallbacks(timeoutRunnable);
-                                                        setLoading(false);
-                                                        
-                                                        String type = roleSnapshot.getValue(String.class);
-                                                        saveToSharedPrefs(user.getUid(), name, type != null ? type : "Buyer");
-                                                        navigateToMain();
-                                                    }
-                                                    @Override
-                                                    public void onCancelled(@NonNull DatabaseError error) {
-                                                        // If both fail, let the timeout handle it
-                                                    }
-                                                });
-                                            }
+                                            return;
                                         }
+
+                                        // Optional fallback: Check the role_registry by email (older accounts)
+                                        String authEmail = user.getEmail();
+                                        if (authEmail == null) {
+                                            setLoading(false);
+                                            saveToSharedPrefs(user.getUid(), name, "Buyer");
+                                            navigateToMain();
+                                            return;
+                                        }
+
+                                        String encodedEmail = authEmail.replace(".", ",");
+                                        mDatabase.child("role_registry").child(encodedEmail).addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot roleSnapshot) {
+                                                if (!isAdded()) return;
+                                                setLoading(false);
+                                                String type = roleSnapshot.getValue(String.class);
+                                                saveToSharedPrefs(user.getUid(), name, type != null ? type : "Buyer");
+                                                navigateToMain();
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError error) {
+                                                if (!isAdded()) return;
+                                                Log.e(TAG, "role_registry lookup cancelled: " + error.getMessage());
+                                                setLoading(false);
+                                                saveToSharedPrefs(user.getUid(), name, "Buyer");
+                                                navigateToMain();
+                                            }
+                                        });
                                     }
 
                                     @Override
                                     public void onCancelled(@NonNull DatabaseError error) {
-                                        if (hasRedirected[0] || !isAdded()) return;
+                                        if (!isAdded()) return;
                                         Log.e(TAG, "DB Load error: " + error.getMessage());
+                                        setLoading(false);
+                                        Toast.makeText(getContext(), "Failed to load profile: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 });
                             } else {

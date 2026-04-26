@@ -31,6 +31,7 @@ import java.util.List;
 public class SellerHomeFragment extends Fragment {
 
     private static final String TAG = "SellerHomeFragment";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
     private TextView tvHello;
     private RecyclerView rvProducts;
     private FloatingActionButton fabAdd;
@@ -38,6 +39,7 @@ public class SellerHomeFragment extends Fragment {
     private DatabaseReference mDatabase;
     private SellerProductAdapter adapter;
     private List<Product> productList;
+    private ValueEventListener productsListener;
 
     private static final String PREFS_NAME = "auth_prefs";
     private static final String LOGGED_IN_KEY = "logged_in";
@@ -70,7 +72,7 @@ public class SellerHomeFragment extends Fragment {
             tvHello.setText("Hello " + name);
         }
 
-        mDatabase = FirebaseDatabase.getInstance().getReference("products");
+        mDatabase = FirebaseDatabase.getInstance(DB_URL).getReference("products");
         productList = new ArrayList<>();
         
         rvProducts.setLayoutManager(new GridLayoutManager(getContext(), 2));
@@ -97,7 +99,10 @@ public class SellerHomeFragment extends Fragment {
         String sellerId = FirebaseAuth.getInstance().getUid();
         if (sellerId == null) return;
 
-        mDatabase.addValueEventListener(new ValueEventListener() {
+        if (productsListener != null) {
+            mDatabase.removeEventListener(productsListener);
+        }
+        productsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded()) return;
@@ -117,7 +122,17 @@ public class SellerHomeFragment extends Fragment {
                     Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        };
+        mDatabase.addValueEventListener(productsListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mDatabase != null && productsListener != null) {
+            mDatabase.removeEventListener(productsListener);
+            productsListener = null;
+        }
     }
 
     private void logout() {

@@ -29,6 +29,7 @@ import java.util.Map;
 public class Fragment_Sign_up extends Fragment {
 
     private static final String TAG = "Fragment_Sign_up";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
     private ProgressBar progressBar;
@@ -49,7 +50,7 @@ public class Fragment_Sign_up extends Fragment {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
         try {
-            mDatabase = FirebaseDatabase.getInstance().getReference();
+            mDatabase = FirebaseDatabase.getInstance(DB_URL).getReference();
         } catch (Exception e) {
             Log.e(TAG, "Database init failed", e);
         }
@@ -123,17 +124,9 @@ public class Fragment_Sign_up extends Fragment {
                             FirebaseUser user = mAuth.getCurrentUser();
                             if (user != null) {
                                 String userId = user.getUid();
-                                
-                                // Save to database in background
-                                saveUserToDatabaseInBackground(userId, name, email, address, phone, country, dob, finalGender, finalAccountType);
-                                
-                                // Save to SharedPrefs and transition immediately
-                                saveToSharedPrefs(userId, name, finalAccountType);
-                                
-                                Intent intent = new Intent(getContext(), MainActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                                if (getActivity() != null) getActivity().finish();
+
+                                // Save to RTDB first (required), then persist session and navigate.
+                                saveUserToDatabase(user, userId, name, email, address, phone, country, dob, finalGender, finalAccountType);
                             }
                         } else {
                             setLoading(false);
@@ -155,7 +148,7 @@ public class Fragment_Sign_up extends Fragment {
         if (progressBar != null) progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
     }
 
-    private void saveUserToDatabaseInBackground(String userId, String name, String email, String address, String phone, String country, String dob, String gender, String accountType) {
+    private void saveUserToDatabase(FirebaseUser authUser, String userId, String name, String email, String address, String phone, String country, String dob, String gender, String accountType) {
         if (mDatabase == null) return;
         
         Map<String, Object> userMap = new HashMap<>();
@@ -169,8 +162,26 @@ public class Fragment_Sign_up extends Fragment {
         userMap.put("accountType", accountType);
 
         mDatabase.child("users").child(userId).setValue(userMap)
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "Database save successful"))
-                .addOnFailureListener(e -> Log.e(TAG, "Database save failed", e));
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Database save successful");
+                    if (!isAdded()) return;
+
+                    saveToSharedPrefs(userId, name, accountType);
+
+                    Intent intent = new Intent(getContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    if (getActivity() != null) getActivity().finish();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Database save failed", e);
+                    if (!isAdded()) return;
+                    setLoading(false);
+                    Toast.makeText(getContext(), "Signup failed (profile save): " + e.getMessage(), Toast.LENGTH_LONG).show();
+
+                    // Avoid orphan auth user if profile write failed
+                    authUser.delete();
+                });
         
         // Also save to a role registry for easier lookup
         String encodedEmail = email.replace(".", ",");

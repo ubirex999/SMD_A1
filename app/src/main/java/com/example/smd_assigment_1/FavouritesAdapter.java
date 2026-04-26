@@ -2,6 +2,7 @@ package com.example.smd_assigment_1;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,13 +19,13 @@ import java.util.List;
 public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.VH> {
 
     private final Context context;
-    private final FavouritesStore favouritesStore;
+    private final DatabaseHelper dbHelper;
     private final CartStore cartStore;
     private final List<Product> products = new ArrayList<>();
 
     public FavouritesAdapter(Context context) {
         this.context = context;
-        this.favouritesStore = new FavouritesStore(context);
+        this.dbHelper = new DatabaseHelper(context);
         this.cartStore = CartStore.getInstance(context);
     }
 
@@ -55,6 +56,34 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.VH
         notifyDataSetChanged();
     }
 
+    public void reloadFromDb() {
+        products.clear();
+        Cursor cursor = dbHelper.getFavourites();
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_ID));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_NAME));
+                String price = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_PRICE));
+                String type = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_TYPE));
+                String desc = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_FAV_DESC));
+
+                Product p = new Product();
+                p.setId(id);
+                p.setName(name);
+                p.setPrice(price);
+                p.setType(type);
+                p.setDescription(desc);
+                p.setImageResId(p.getResolvedImageResId());
+                p.setModelOrInfo(type);
+                products.add(p);
+            } while (cursor.moveToNext());
+            cursor.close();
+        } else if (cursor != null) {
+            cursor.close();
+        }
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -73,6 +102,9 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.VH
 
         // Cart icon — add product to cart (quantity = 1), stays in favourites
         holder.btnCart.setOnClickListener(v -> {
+            if (p.imageResId == 0) {
+                p.setImageResId(p.getResolvedImageResId());
+            }
             cartStore.addToCart(p);
             Toast.makeText(context, p.name + " added to cart", Toast.LENGTH_SHORT).show();
         });
@@ -83,7 +115,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.VH
                     .setTitle("Remove Favourite")
                     .setMessage("Do you want to delete this product from favourites?")
                     .setPositiveButton("Yes", (dialog, which) -> {
-                        favouritesStore.toggleFavourite(p);
+                        dbHelper.removeFavourite(p.id);
                         int pos = holder.getAdapterPosition();
                         if (pos != RecyclerView.NO_POSITION) {
                             products.remove(pos);

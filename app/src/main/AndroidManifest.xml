@@ -34,9 +34,6 @@
             android:name=".detail_buy"
             android:exported="false" />
         <activity
-            android:name=".ProductAddActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="false" />
         <activity

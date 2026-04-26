@@ -29,8 +29,11 @@ public class AccountFragment extends Fragment {
     private MaterialButton btnLogout;
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
+    private ValueEventListener userListener;
+    private ValueEventListener connectedListener;
 
     private static final String PREFS_NAME = "auth_prefs";
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     @Nullable
     @Override
@@ -57,7 +60,7 @@ public class AccountFragment extends Fragment {
         }
 
         mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance(DB_URL).getReference();
 
         loadUserDetails();
 
@@ -82,7 +85,10 @@ public class AccountFragment extends Fragment {
         if (userId == null) return;
 
         // Monitor connection status
-        mDatabase.child(".info/connected").addValueEventListener(new ValueEventListener() {
+        if (connectedListener != null) {
+            mDatabase.child(".info/connected").removeEventListener(connectedListener);
+        }
+        connectedListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 boolean connected = snapshot.getValue(Boolean.class) != null && snapshot.getValue(Boolean.class);
@@ -93,9 +99,13 @@ public class AccountFragment extends Fragment {
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        };
+        mDatabase.child(".info/connected").addValueEventListener(connectedListener);
 
-        mDatabase.child("users").child(userId).addValueEventListener(new ValueEventListener() {
+        if (userListener != null) {
+            mDatabase.child("users").child(userId).removeEventListener(userListener);
+        }
+        userListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded()) return;
@@ -105,7 +115,14 @@ public class AccountFragment extends Fragment {
                     
                     // Helper to get values safely
                     tvName.setText(getStringValue(snapshot, "name", "Not Set"));
-                    tvEmail.setText(getStringValue(snapshot, "email", "Not Set"));
+                    String emailFromDb = getStringValue(snapshot, "email", null);
+                    if (emailFromDb != null) {
+                        tvEmail.setText(emailFromDb);
+                    } else if (mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getEmail() != null) {
+                        tvEmail.setText(mAuth.getCurrentUser().getEmail());
+                    } else {
+                        tvEmail.setText("Not Set");
+                    }
                     tvAddress.setText(getStringValue(snapshot, "address", "Not Set"));
                     tvDob.setText(getStringValue(snapshot, "dob", "Not Set"));
                     tvGender.setText(getStringValue(snapshot, "gender", "Not Set"));
@@ -133,10 +150,15 @@ public class AccountFragment extends Fragment {
             public void onCancelled(@NonNull DatabaseError error) {
                 Log.e("AccountFragment", "Firebase DB load failed: " + error.getMessage() + " (" + error.getCode() + ")");
                 if (isAdded() && getContext() != null) {
-                    if (tvAddress.getText().toString().equals("Loading...")) tvAddress.setText("Error: " + error.getMessage());
+                    tvAddress.setText("Error: " + error.getMessage());
+                    tvDob.setText("Error");
+                    tvGender.setText("Error");
+                    tvPhone.setText("Error");
+                    tvCountry.setText("Error");
                 }
             }
-        });
+        };
+        mDatabase.child("users").child(userId).addValueEventListener(userListener);
     }
 
     private String getStringValue(DataSnapshot snapshot, String key, String defaultValue) {
@@ -145,13 +167,6 @@ public class AccountFragment extends Fragment {
     }
 
     private void logout() {
-        String userId = mAuth.getUid();
-        
-        // Requirement: "Also user info is also removed from firebase real-time db"
-        if (userId != null) {
-            mDatabase.child("users").child(userId).removeValue();
-        }
-
         mAuth.signOut();
         
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -161,5 +176,21 @@ public class AccountFragment extends Fragment {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         if (getActivity() != null) getActivity().finish();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        String userId = mAuth != null ? mAuth.getUid() : null;
+        if (mDatabase != null) {
+            if (connectedListener != null) {
+                mDatabase.child(".info/connected").removeEventListener(connectedListener);
+                connectedListener = null;
+            }
+            if (userListener != null && userId != null) {
+                mDatabase.child("users").child(userId).removeEventListener(userListener);
+                userListener = null;
+            }
+        }
     }
 }

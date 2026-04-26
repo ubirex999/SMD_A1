@@ -53,13 +53,15 @@ public class CartStore {
         JSONObject cart = getCartJson();
         if (!cart.has(product.id)) {
             try {
+                int imageResId = product.imageResId != 0 ? product.imageResId : product.getResolvedImageResId();
                 JSONObject entry = new JSONObject();
                 entry.put("name", product.name);
                 entry.put("price", product.price);
                 if (product.originalPrice != null) entry.put("originalPrice", product.originalPrice);
                 entry.put("description", product.description);
                 entry.put("modelOrInfo", product.modelOrInfo);
-                entry.put("imageResId", product.imageResId);
+                entry.put("type", product.type);
+                entry.put("imageResId", imageResId);
                 entry.put("quantity", 1);
                 cart.put(product.id, entry);
                 saveCartJson(cart);
@@ -118,6 +120,7 @@ public class CartStore {
             String originalPrice = entry.has("originalPrice") ? entry.optString("originalPrice") : null;
             String description = entry.optString("description", "");
             String modelOrInfo = entry.optString("modelOrInfo", "");
+            String type = entry.optString("type", "");
             int imageResId = entry.optInt("imageResId", 0);
             int quantity = entry.optInt("quantity", 1);
 
@@ -128,6 +131,10 @@ public class CartStore {
             }
 
             Product product = new Product(id, name, price, originalPrice, description, modelOrInfo, imageResId);
+            product.setType(type);
+            if (product.imageResId == 0) {
+                product.setImageResId(product.getResolvedImageResId());
+            }
             items.add(new CartItem(product, quantity));
         }
         return items;

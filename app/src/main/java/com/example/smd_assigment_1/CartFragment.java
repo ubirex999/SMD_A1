@@ -19,12 +19,22 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class CartFragment extends Fragment implements CartAdapter.OnCartChangedListener {
 
     private static final int SMS_PERMISSION_CODE = 101;
+    private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
+    private static final String CHECKOUT_SMS_NUMBER = "03104695189";
 
     private TextView tvTotalPrice;
     private CartAdapter adapter;
@@ -104,6 +114,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
         sb.append("Order Details:\n");
 
         double total = 0;
+        List<CartStore.CartItem> cartItems = adapter.getItems();
         for (CartStore.CartItem item : adapter.getItems()) {
             String priceStr = item.product.price.replaceAll("[^\\d.]", "");
             double price = 0;
@@ -121,39 +132,71 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
         }
         sb.append("Total: $").append(String.format(Locale.US, "%.2f", total));
 
-        String number = "03104695189";
+        String number = CHECKOUT_SMS_NUMBER;
         String message = sb.toString();
 
         try {
-            // Save order to Database for History
-            DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-            String orderId = "ORD-" + (int)(Math.random() * 9000 + 1000);
+            String buyerId = FirebaseAuth.getInstance().getUid();
+            if (buyerId == null) {
+                Toast.makeText(requireContext(), "Please login again to place order.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            DatabaseReference rootRef = FirebaseDatabase.getInstance(DB_URL).getReference();
+            String orderId = rootRef.child("orders").push().getKey();
+            if (orderId == null) {
+                Toast.makeText(requireContext(), "Failed to create order. Try again.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String date = java.text.DateFormat.getDateTimeInstance().format(new java.util.Date());
             
             java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
-            for (CartStore.CartItem item : adapter.getItems()) {
+            Set<String> sellerIds = new HashSet<>();
+            for (CartStore.CartItem item : cartItems) {
                 double price = 0;
                 try {
                     price = Double.parseDouble(item.product.price.replaceAll("[^\\d.]", ""));
                 } catch (Exception ignored) {}
-                orderItems.add(new OrderItem(item.product.name, item.quantity, price));
+
+                String sellerId = item.product.sellerId != null ? item.product.sellerId : "";
+                if (!sellerId.isEmpty()) sellerIds.add(sellerId);
+
+                orderItems.add(new OrderItem(
+                        item.product.id,
+                        item.product.name,
+                        item.quantity,
+                        price,
+                        sellerId
+                ));
             }
             
-            Order order = new Order(orderId, "user_123", date, total, orderItems, "Processing");
-            dbHelper.saveOrder(order);
+            Order order = new Order(orderId, buyerId, date, total, orderItems, "Processing");
 
-            SmsManager smsManager = SmsManager.getDefault();
-            // Split message if it's too long
-            List<String> parts = smsManager.divideMessage(message);
-            smsManager.sendMultipartTextMessage(number, null, (java.util.ArrayList<String>) parts, null, null);
-            
-            Toast.makeText(requireContext(), "Order placed and history updated!", Toast.LENGTH_SHORT).show();
-            
-            // Clear Cart
-            CartStore cartStore = CartStore.getInstance(requireContext());
-            cartStore.clearCart();
-            loadCart();
-            
+            // Fan-out write: global, buyer view, and each seller view
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("orders/" + orderId, order);
+            updates.put("user_orders/" + buyerId + "/" + orderId, order);
+            for (String sellerId : sellerIds) {
+                updates.put("seller_orders/" + sellerId + "/" + orderId, order);
+            }
+
+            rootRef.updateChildren(updates)
+                    .addOnSuccessListener(aVoid -> {
+                        SmsManager smsManager = SmsManager.getDefault();
+                        // Split message if it's too long
+                        List<String> parts = smsManager.divideMessage(message);
+                        smsManager.sendMultipartTextMessage(number, null, (java.util.ArrayList<String>) parts, null, null);
+
+                        Toast.makeText(requireContext(), "Order placed!", Toast.LENGTH_SHORT).show();
+
+                        // Clear Cart
+                        CartStore cartStore = CartStore.getInstance(requireContext());
+                        cartStore.clearCart();
+                        loadCart();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(requireContext(), "Order save failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Checkout failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
