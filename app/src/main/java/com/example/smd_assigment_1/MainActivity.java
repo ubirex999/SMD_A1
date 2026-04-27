@@ -23,6 +23,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -31,31 +32,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private String accountType;
 
     private static final String PREFS_NAME = "auth_prefs";
+    private static final String LOGGED_IN_KEY = "logged_in";
     private static final String ACCOUNT_TYPE_KEY = "account_type";
     private static final String USER_NAME_KEY = "user_name";
     private static final String THEME_KEY = "theme_mode";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Load theme before super.onCreate
+        // Apply theme before super.onCreate so it takes effect immediately
         SharedPreferences themePrefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         boolean isDarkMode = themePrefs.getBoolean(THEME_KEY, false);
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
+        int desiredMode = isDarkMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO;
+        AppCompatDelegate.setDefaultNightMode(desiredMode);
 
         super.onCreate(savedInstanceState);
         
-        try {
-            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
-        } catch (Exception e) {
-            // Persistence might already be enabled or failed to init
-            Log.d("MainActivity", "Persistence already enabled or failed");
-        }
-        
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            prefs.edit().putBoolean(LOGGED_IN_KEY, false).apply();
+            Intent intent = new Intent(this, Login_Signup_page.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         accountType = prefs.getString(ACCOUNT_TYPE_KEY, "Buyer");
         String userName = prefs.getString(USER_NAME_KEY, "User");
 
@@ -103,12 +104,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if ("Seller".equalsIgnoreCase(accountType)) {
             bottomNavigationView.setVisibility(View.GONE);
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-            replaceFragment(new SellerHomeFragment());
+            if (savedInstanceState == null || getSupportFragmentManager().findFragmentById(R.id.fragment_container) == null) {
+                replaceFragment(new SellerHomeFragment());
+            }
         } else {
             bottomNavigationView.setVisibility(View.VISIBLE);
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
             setupBottomNav();
-            if (savedInstanceState == null) {
+            if (savedInstanceState == null || getSupportFragmentManager().findFragmentById(R.id.fragment_container) == null) {
                 replaceFragment(new HomeFragment());
                 bottomNavigationView.setSelectedItemId(R.id.nav_home);
             }

@@ -24,11 +24,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class CartFragment extends Fragment implements CartAdapter.OnCartChangedListener {
 
@@ -142,6 +140,10 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
                 return;
             }
 
+            // Get buyer name for the seller's order view
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE);
+            String buyerName = prefs.getString("user_name", "Unknown Buyer");
+
             DatabaseReference rootRef = FirebaseDatabase.getInstance(DB_URL).getReference();
             String orderId = rootRef.child("orders").push().getKey();
             if (orderId == null) {
@@ -152,7 +154,8 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
             String date = java.text.DateFormat.getDateTimeInstance().format(new java.util.Date());
             
             java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
-            Set<String> sellerIds = new HashSet<>();
+            // Group items by sellerId for per-seller order creation
+            Map<String, java.util.List<OrderItem>> sellerItemsMap = new HashMap<>();
             for (CartStore.CartItem item : cartItems) {
                 double price = 0;
                 try {
@@ -160,25 +163,44 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartChangedL
                 } catch (Exception ignored) {}
 
                 String sellerId = item.product.sellerId != null ? item.product.sellerId : "";
-                if (!sellerId.isEmpty()) sellerIds.add(sellerId);
 
-                orderItems.add(new OrderItem(
+                OrderItem orderItem = new OrderItem(
                         item.product.id,
                         item.product.name,
                         item.quantity,
                         price,
                         sellerId
-                ));
+                );
+                orderItems.add(orderItem);
+
+                // Group by seller
+                if (!sellerId.isEmpty()) {
+                    sellerItemsMap.computeIfAbsent(sellerId, k -> new java.util.ArrayList<>()).add(orderItem);
+                }
             }
             
-            Order order = new Order(orderId, buyerId, date, total, orderItems, "Processing");
+            // Full order for global and buyer view
+            Order fullOrder = new Order(orderId, buyerId, buyerName, date, total, orderItems, "Processing");
 
-            // Fan-out write: global, buyer view, and each seller view
+            // Fan-out write: global, buyer view, and per-seller filtered view
             Map<String, Object> updates = new HashMap<>();
-            updates.put("orders/" + orderId, order);
-            updates.put("user_orders/" + buyerId + "/" + orderId, order);
-            for (String sellerId : sellerIds) {
-                updates.put("seller_orders/" + sellerId + "/" + orderId, order);
+            updates.put("orders/" + orderId, fullOrder);
+            updates.put("user_orders/" + buyerId + "/" + orderId, fullOrder);
+
+            // Each seller only gets an order with THEIR items and recalculated total
+            for (Map.Entry<String, java.util.List<OrderItem>> entry : sellerItemsMap.entrySet()) {
+                String sellerId = entry.getKey();
+                java.util.List<OrderItem> sellerItems = entry.getValue();
+                
+                // Calculate total for this seller's items only
+                double sellerTotal = 0;
+                for (OrderItem item : sellerItems) {
+                    sellerTotal += item.getPrice() * item.getQuantity();
+                }
+                
+                // Create a seller-specific order with only their items
+                Order sellerOrder = new Order(orderId, buyerId, buyerName, date, sellerTotal, sellerItems, "Processing");
+                updates.put("seller_orders/" + sellerId + "/" + orderId, sellerOrder);
             }
 
             rootRef.updateChildren(updates)

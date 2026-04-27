@@ -34,6 +34,10 @@ public class AccountFragment extends Fragment {
 
     private static final String PREFS_NAME = "auth_prefs";
     private static final String DB_URL = "https://smd-assigment-1-default-rtdb.asia-southeast1.firebasedatabase.app";
+    private static final String LOGGED_IN_KEY = "logged_in";
+    private static final String USER_ID_KEY = "user_id";
+    private static final String USER_NAME_KEY = "user_name";
+    private static final String ACCOUNT_TYPE_KEY = "account_type";
 
     @Nullable
     @Override
@@ -167,10 +171,29 @@ public class AccountFragment extends Fragment {
     }
 
     private void logout() {
+        // Clean up Firebase listeners BEFORE signing out
+        // (after signOut, mAuth.getUid() returns null and listeners can't be removed)
+        String userId = mAuth != null ? mAuth.getUid() : null;
+        if (mDatabase != null) {
+            if (connectedListener != null) {
+                mDatabase.child(".info/connected").removeEventListener(connectedListener);
+                connectedListener = null;
+            }
+            if (userListener != null && userId != null) {
+                mDatabase.child("users").child(userId).removeEventListener(userListener);
+                userListener = null;
+            }
+        }
+
         mAuth.signOut();
-        
+
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().clear().apply();
+        prefs.edit()
+                .putBoolean(LOGGED_IN_KEY, false)
+                .remove(USER_ID_KEY)
+                .remove(USER_NAME_KEY)
+                .remove(ACCOUNT_TYPE_KEY)
+                .apply();
 
         Intent intent = new Intent(getActivity(), Login_Signup_page.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

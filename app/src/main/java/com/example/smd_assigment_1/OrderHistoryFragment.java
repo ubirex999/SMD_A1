@@ -60,8 +60,12 @@ public class OrderHistoryFragment extends Fragment {
         
         orderList = new ArrayList<>();
 
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE);
+        String accountType = prefs.getString("account_type", "Buyer");
+        boolean isSeller = "Seller".equalsIgnoreCase(accountType);
+
         rvOrders.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new OrderAdapter(orderList);
+        adapter = new OrderAdapter(orderList, isSeller);
         rvOrders.setAdapter(adapter);
 
         loadOrderHistory();
@@ -77,8 +81,9 @@ public class OrderHistoryFragment extends Fragment {
 
         android.content.SharedPreferences prefs = requireContext().getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE);
         String type = prefs.getString("account_type", "Buyer");
+        boolean isSeller = "Seller".equalsIgnoreCase(type);
 
-        String node = "Seller".equalsIgnoreCase(type) ? ("seller_orders/" + uid) : ("user_orders/" + uid);
+        String node = isSeller ? ("seller_orders/" + uid) : ("user_orders/" + uid);
         ordersRef = FirebaseDatabase.getInstance(DB_URL).getReference(node);
 
         if (ordersListener != null) {
@@ -93,7 +98,26 @@ public class OrderHistoryFragment extends Fragment {
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Order order = data.getValue(Order.class);
                     if (order != null) {
-                        orderList.add(order);
+                        if (isSeller) {
+                            // Defense-in-depth: filter items to only this seller's products
+                            java.util.List<OrderItem> filtered = new java.util.ArrayList<>();
+                            double filteredTotal = 0;
+                            if (order.getItems() != null) {
+                                for (OrderItem item : order.getItems()) {
+                                    if (uid.equals(item.getSellerId())) {
+                                        filtered.add(item);
+                                        filteredTotal += item.getPrice() * item.getQuantity();
+                                    }
+                                }
+                            }
+                            if (!filtered.isEmpty()) {
+                                order.setItems(filtered);
+                                order.setTotalAmount(filteredTotal);
+                                orderList.add(order);
+                            }
+                        } else {
+                            orderList.add(order);
+                        }
                     }
                 }
                 adapter.notifyDataSetChanged();

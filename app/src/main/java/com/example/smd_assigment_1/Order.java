@@ -5,6 +5,7 @@ import java.util.List;
 public class Order {
     private String orderId;
     private String userId;
+    private String buyerName;
     private String date;
     private double totalAmount;
     private List<OrderItem> items;
@@ -12,9 +13,10 @@ public class Order {
 
     public Order() {}
 
-    public Order(String orderId, String userId, String date, double totalAmount, List<OrderItem> items, String status) {
+    public Order(String orderId, String userId, String buyerName, String date, double totalAmount, List<OrderItem> items, String status) {
         this.orderId = orderId;
         this.userId = userId;
+        this.buyerName = buyerName;
         this.date = date;
         this.totalAmount = totalAmount;
         this.items = items;
@@ -26,6 +28,9 @@ public class Order {
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public String getBuyerName() { return buyerName; }
+    public void setBuyerName(String buyerName) { this.buyerName = buyerName; }
 
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }

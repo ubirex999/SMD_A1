@@ -136,10 +136,21 @@ public class SellerHomeFragment extends Fragment {
     }
 
     private void logout() {
+        // Clean up Firebase listener BEFORE signing out
+        if (mDatabase != null && productsListener != null) {
+            mDatabase.removeEventListener(productsListener);
+            productsListener = null;
+        }
+
         FirebaseAuth.getInstance().signOut();
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putBoolean(LOGGED_IN_KEY, false).apply();
-        
+        prefs.edit()
+                .putBoolean(LOGGED_IN_KEY, false)
+                .remove("user_id")
+                .remove("user_name")
+                .remove("account_type")
+                .apply();
+
         Intent intent = new Intent(getActivity(), Login_Signup_page.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

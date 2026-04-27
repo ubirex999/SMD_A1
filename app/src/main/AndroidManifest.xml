@@ -38,7 +38,8 @@
             android:exported="false" />
         <activity
             android:name=".activity_splash"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Smd_assigment_1.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

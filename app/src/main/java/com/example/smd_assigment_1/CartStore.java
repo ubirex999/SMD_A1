@@ -61,6 +61,7 @@ public class CartStore {
                 entry.put("description", product.description);
                 entry.put("modelOrInfo", product.modelOrInfo);
                 entry.put("type", product.type);
+                if (product.sellerId != null) entry.put("sellerId", product.sellerId);
                 entry.put("imageResId", imageResId);
                 entry.put("quantity", 1);
                 cart.put(product.id, entry);
@@ -121,6 +122,7 @@ public class CartStore {
             String description = entry.optString("description", "");
             String modelOrInfo = entry.optString("modelOrInfo", "");
             String type = entry.optString("type", "");
+            String sellerId = entry.optString("sellerId", null);
             int imageResId = entry.optInt("imageResId", 0);
             int quantity = entry.optInt("quantity", 1);
 
@@ -132,6 +134,7 @@ public class CartStore {
 
             Product product = new Product(id, name, price, originalPrice, description, modelOrInfo, imageResId);
             product.setType(type);
+            product.setSellerId(sellerId);
             if (product.imageResId == 0) {
                 product.setImageResId(product.getResolvedImageResId());
             }

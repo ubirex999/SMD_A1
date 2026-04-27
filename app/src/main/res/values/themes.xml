@@ -7,6 +7,13 @@
 
     <style name="Theme.Smd_assigment_1" parent="Base.Theme.Smd_assigment_1" />
 
+    <!-- Splash screen theme: always light, white background -->
+    <style name="Theme.Smd_assigment_1.Splash" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
     <style name="CircleImage" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>

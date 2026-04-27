@@ -14,9 +14,15 @@ import java.util.Locale;
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
     private List<Order> orderList;
+    private boolean isSeller;
 
     public OrderAdapter(List<Order> orderList) {
+        this(orderList, false);
+    }
+
+    public OrderAdapter(List<Order> orderList, boolean isSeller) {
         this.orderList = orderList;
+        this.isSeller = isSeller;
     }
 
     @NonNull
@@ -51,6 +57,14 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         holder.tvDate.setText(order.getDate() != null ? order.getDate() : "No Date");
         holder.tvTotal.setText(String.format(Locale.US, "$%.2f", order.getTotalAmount()));
 
+        // Show buyer name for seller view
+        if (isSeller && order.getBuyerName() != null && !order.getBuyerName().isEmpty()) {
+            holder.tvBuyerName.setVisibility(View.VISIBLE);
+            holder.tvBuyerName.setText("Buyer: " + order.getBuyerName());
+        } else {
+            holder.tvBuyerName.setVisibility(View.GONE);
+        }
+
         StringBuilder summary = new StringBuilder();
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
@@ -71,7 +85,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     }
 
     public static class OrderViewHolder extends RecyclerView.ViewHolder {
-        TextView tvId, tvStatus, tvDate, tvSummary, tvTotal;
+        TextView tvId, tvStatus, tvDate, tvSummary, tvTotal, tvBuyerName;
         View btnTrack;
 
         public OrderViewHolder(@NonNull View itemView) {
@@ -82,6 +96,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             tvSummary = itemView.findViewById(R.id.tvOrderSummary);
             tvTotal = itemView.findViewById(R.id.tvOrderTotal);
             btnTrack = itemView.findViewById(R.id.btnTrack);
+            tvBuyerName = itemView.findViewById(R.id.tvBuyerName);
         }
     }
 }

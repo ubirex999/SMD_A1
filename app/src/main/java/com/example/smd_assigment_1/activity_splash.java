@@ -4,16 +4,36 @@ import android.content.SharedPreferences;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.widget.ImageView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
+import com.google.firebase.auth.FirebaseAuth;
 
 public class activity_splash extends AppCompatActivity {
     ImageView truck;
+    private final Handler splashHandler = new Handler(Looper.getMainLooper());
+    private final Runnable navigateRunnable = () -> {
+        Intent next;
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean loggedIn = prefs.getBoolean(LOGGED_IN_KEY, false);
+        boolean firebaseLoggedIn = FirebaseAuth.getInstance().getCurrentUser() != null;
+        boolean onboardingShown = prefs.getBoolean(ONBOARDING_SHOWN_KEY, false);
+
+        if (loggedIn && firebaseLoggedIn) {
+            next = new Intent(activity_splash.this, MainActivity.class);
+        } else {
+            prefs.edit().putBoolean(LOGGED_IN_KEY, false).apply();
+            if (onboardingShown) {
+                next = new Intent(activity_splash.this, Login_Signup_page.class);
+            } else {
+                next = new Intent(activity_splash.this, ON_Bording_Screen.class);
+            }
+        }
+        startActivity(next);
+        finish();
+    };
 
     private static final String PREFS_NAME = "auth_prefs";
     private static final String LOGGED_IN_KEY = "logged_in";
@@ -22,13 +42,7 @@ public class activity_splash extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_splash);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main1), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
         init();
         truck.post(new Runnable() {
             @Override
@@ -42,24 +56,7 @@ public class activity_splash extends AppCompatActivity {
                         .start();
             }
         });
-        new Handler().postDelayed(() -> {
-            Intent next;
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            boolean loggedIn = prefs.getBoolean(LOGGED_IN_KEY, false);
-            boolean onboardingShown = prefs.getBoolean(ONBOARDING_SHOWN_KEY, false);
-
-            if (loggedIn) {
-                next = new Intent(activity_splash.this, MainActivity.class);
-            } else {
-                if (onboardingShown) {
-                    next = new Intent(activity_splash.this, Login_Signup_page.class);
-                } else {
-                    next = new Intent(activity_splash.this, ON_Bording_Screen.class);
-                }
-            }
-            startActivity(next);
-            finish();
-        }, 4000);
+        splashHandler.postDelayed(navigateRunnable, 4000);
 
     }
 
@@ -68,6 +65,12 @@ public class activity_splash extends AppCompatActivity {
     {
         truck = findViewById(R.id.truck);
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        splashHandler.removeCallbacks(navigateRunnable);
+        super.onDestroy();
     }
 
 }
