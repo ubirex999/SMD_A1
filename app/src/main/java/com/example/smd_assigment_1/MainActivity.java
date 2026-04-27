@@ -179,6 +179,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             replaceFragment(new SellerHomeFragment(), false);
         } else if (id == R.id.nav_order_history) {
             replaceFragment(new OrderHistoryFragment(), true);
+        } else if (id == R.id.nav_seller_messages) {
+            replaceFragment(new BuyerListFragment(), true);
         } else if (id == R.id.nav_seller_account) {
             replaceFragment(new AccountFragment(), true);
         }

@@ -10,6 +10,10 @@
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Order History" />
         <item
+            android:id="@+id/nav_seller_messages"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Messages" />
+        <item
             android:id="@+id/nav_seller_account"
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Account Settings" />

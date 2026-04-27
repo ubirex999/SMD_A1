@@ -61,8 +61,13 @@ public class HomeFragment extends Fragment {
 
         fabChat = root.findViewById(R.id.fabChat);
         fabChat.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ChatActivity.class);
-            startActivity(intent);
+            if (getActivity() instanceof MainActivity) {
+                getActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new SellerListFragment())
+                        .addToBackStack(null)
+                        .commit();
+            }
         });
 
         // Deals section — horizontal scrolling RecyclerView
